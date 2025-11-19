@@ -1,0 +1,306 @@
+We're creating a new website where a user can apply for a commercial real estate loan. They should be able to sign up/ sign in/ save progress and view loan status. The logic for the intake should follow
+
+
+Based on the documentation guide and your requirements, I'll create an optimized Mermaid diagram that leverages the two-stage documentation process (initial submission vs. underwriting) to create a streamlined experience.
+
+```mermaid
+graph TD
+    Start([Start Application]) --> QuickStart[Quick Start Screen<br/>3 Questions Only]
+    
+    QuickStart --> LoanType{Loan Type<br/>Selection}
+    
+    %% Loan Type Routing
+    LoanType -->|Permanent<br/>Acquisition| PA_Path[PA: Transaction Core]
+    LoanType -->|Permanent<br/>Refinance| PR_Path[PR: Existing Loan Info]
+    LoanType -->|Bridge<br/>Acquisition| BA_Path[BA: Speed Path]
+    LoanType -->|Bridge<br/>Refinance| BR_Path[BR: Payoff Details]
+    LoanType -->|Construction| C_Path[C: Project Overview]
+    
+    %% Common Early Collection (All Paths Converge)
+    PA_Path --> CommonCore[Common Core Info<br/>Borrower & Property Basics]
+    PR_Path --> CommonCore
+    BA_Path --> CommonCore
+    BR_Path --> CommonCore
+    C_Path --> CommonCore
+    
+    %% Type-Specific Critical Info
+    CommonCore --> PA_Critical[PA: Purchase Details<br/>Contract & Funds]
+    CommonCore --> PR_Critical[PR: Current Debt<br/>& Performance]
+    CommonCore --> BA_Critical[BA: Exit Strategy<br/>& Business Plan]
+    CommonCore --> BR_Critical[BR: Payoff & <br/>Repositioning Plan]
+    CommonCore --> C_Critical[C: Budget & <br/>Site Control]
+    
+    %% Financial Snapshot
+    PA_Critical --> FinSnapshot[Financial Snapshot<br/>Proof of Capacity]
+    PR_Critical --> FinSnapshot
+    BA_Critical --> FinSnapshot
+    BR_Critical --> FinSnapshot
+    C_Critical --> FinSnapshot
+    
+    %% Property Performance (if income-producing)
+    FinSnapshot --> PropPerf{Income<br/>Producing?}
+    PropPerf -->|Yes| RentRoll[Current Performance<br/>Rent Roll & NOI]
+    PropPerf -->|No| SkipIncome[Skip Income Docs]
+    
+    RentRoll --> DocUpload
+    SkipIncome --> DocUpload
+    
+    %% Smart Document Collection
+    DocUpload[Smart Doc Upload<br/>AI Extraction Available]
+    
+    DocUpload --> DocProcess{Documents<br/>Provided?}
+    DocProcess -->|Yes| AIExtract[AI Extracts Fields<br/>User Confirms]
+    DocProcess -->|No| ManualComplete[Complete Remaining<br/>Fields Manually]
+    
+    AIExtract --> InitialReview
+    ManualComplete --> InitialReview
+    
+    %% Initial Submission Complete
+    InitialReview[Review & Submit<br/>For Term Sheet]
+    InitialReview --> AutoCalc[Auto-Calculate<br/>LTV, DSCR, Metrics]
+    
+    AutoCalc --> TermSheet{Term Sheet<br/>Decision Point}
+    
+    %% Term Sheet Acceptance Triggers Full Underwriting
+    TermSheet -->|Accept| Underwriting[Full Underwriting<br/>Documents Required]
+    TermSheet -->|Decline| End([End])
+    
+    %% Underwriting Phase (Post-Term Sheet)
+    Underwriting --> ThirdParty[Third-Party Reports<br/>Ordered by Lender:<br/>• Appraisal<br/>• Phase I Environmental<br/>• Property Condition]
+    
+    ThirdParty --> DetailedFin[Detailed Financials:<br/>• 3 Years Tax Returns<br/>• Verified Statements<br/>• Global Cash Flow]
+    
+    DetailedFin --> LegalDocs[Legal & Entity Docs:<br/>• Operating Agreements<br/>• Insurance Certificates<br/>• Title Work]
+    
+    %% Loan-Specific Underwriting
+    LegalDocs --> PA_Under[PA: Lease Reviews<br/>Title & Survey]
+    LegalDocs --> PR_Under[PR: Updated Valuations<br/>Service Contracts]
+    LegalDocs --> BA_Under[BA: Contractor Bids<br/>Detailed Budget]
+    LegalDocs --> BR_Under[BR: Stabilization Plan<br/>Reserve Analysis]
+    LegalDocs --> C_Under[C: Permits, Pre-leasing<br/>GC Contract, Feasibility]
+    
+    %% Convergence to Commitment
+    PA_Under --> Commitment[Commitment Letter]
+    PR_Under --> Commitment
+    BA_Under --> Commitment
+    BR_Under --> Commitment
+    C_Under --> Commitment
+    
+    Commitment --> Closing[Closing]
+    
+    %% Follow-Up System
+    InitialReview -.->|Missing Info| FollowUp[Automated Follow-Up<br/>For Missing Docs]
+    FollowUp -.-> Dashboard[Borrower Dashboard<br/>Track Status]
+    Closing --> Dashboard
+    
+    %% Styling
+    classDef critical fill:#ff9999
+    classDef optional fill:#99ccff
+    classDef automated fill:#99ff99
+    classDef underwriting fill:#ffcc99
+    
+    class QuickStart,LoanType,CommonCore critical
+    class DocUpload,FollowUp optional
+    class AutoCalc,AIExtract automated
+    class Underwriting,ThirdParty,DetailedFin,LegalDocs underwriting
+```
+
+## Screen-by-Screen Breakdown with Input Fields
+
+### **Screen 1: Quick Start (All Loan Types)**
+- **Loan Type**: Dropdown [Permanent Acquisition, Permanent Refinance, Bridge Acquisition, Bridge Refinance, Construction]
+- **Loan Amount Requested**: Currency input
+- **Property Location**: City, State dropdowns
+
+---
+
+### **Screen 2: Common Core Info (All Loan Types)**
+**Property Basics:**
+- Property Name/Address: Text
+- Property Type: Dropdown [Multifamily, Office, Retail, Industrial, Mixed-Use, Self-Storage, Land, etc.]
+- Square Footage/Units: Number
+- Year Built: Year picker (skip for Construction)
+- Current Occupancy %: Percentage (skip for Land/Construction)
+
+**Borrower Basics:**
+- Entity Name: Text
+- Borrower Type: Dropdown [Individual, LLC, Corporation, Trust, Foreign National]
+- Contact Email: Email
+- Contact Phone: Phone
+- Years of RE Experience: Number
+- Number of Similar Projects Completed: Number
+
+---
+
+### **Screen 3A: Permanent Acquisition - Critical Info**
+- Purchase Price: Currency **(Required)**
+- Purchase Contract: File upload **(Required - Can Upload Later)**
+- Closing Date Target: Date picker **(Required)**
+- Earnest Money Deposited: Currency
+- Seller Concessions: Currency
+
+---
+
+### **Screen 3B: Permanent Refinance - Critical Info**
+- Current Loan Balance: Currency **(Required)**
+- Current Lender Name: Text **(Required)**
+- Current Interest Rate: Percentage
+- Maturity Date: Date picker **(Required)**
+- Prepayment Penalty: Yes/No → If Yes, penalty amount
+- Existing Loan Docs: File upload (Upload Later option)
+
+---
+
+### **Screen 3C: Bridge Acquisition - Critical Info**
+- Purchase Price: Currency **(Required)**
+- Purchase Contract: File upload **(Required - Can Upload Later)**
+- Renovation Budget Estimate: Currency **(Required)**
+- Exit Strategy: Dropdown [Refinance to Perm, Sell, Lease-Up & Hold] **(Required)**
+- Exit Timeline: Dropdown [6 months, 12 months, 18 months, 24 months] **(Required)**
+
+---
+
+### **Screen 3D: Bridge Refinance - Critical Info**
+- Current Bridge Loan Balance: Currency **(Required)**
+- Current Bridge Lender: Text **(Required)**
+- Loan Maturity Date: Date picker **(Required)**
+- Payoff Amount: Currency **(Required)**
+- Remaining CapEx Needed: Currency
+- Months to Stabilization: Number **(Required)**
+
+---
+
+### **Screen 3E: Construction - Critical Info**
+- Land Status: Radio [Already Owned, Under Contract, Need to Acquire]
+- If Under Contract → Purchase Price: Currency
+- Total Project Cost Estimate: Currency **(Required)**
+- Construction Timeline: Number of months **(Required)**
+- Entitlement Status: Dropdown [Not Started, In Process, Fully Entitled, Permits in Hand]
+- General Contractor: Text (or "Not Selected Yet")
+
+---
+
+### **Screen 4: Financial Snapshot (All Loan Types)**
+**Quick Proof of Capacity:**
+- Estimated Net Worth: Currency **(Required)**
+- Liquid Assets Available: Currency **(Required)**
+- Down Payment Source: Dropdown [Cash, Securities, Equity Partner, Other]
+- Bank Statements (Last 2 months): File upload **(Required for Acquisitions, Upload Later option)**
+- Most Recent Tax Return: File upload (Upload Later option)
+- Personal Financial Statement: File upload or quick form (Upload Later option)
+
+**Quick Credit Check:**
+- Estimated Credit Score: Number
+- Any Bankruptcies/Foreclosures (Last 7 years): Yes/No
+- Authorize Soft Credit Pull: Checkbox
+
+---
+
+### **Screen 5: Property Performance (Conditional - Income Properties Only)**
+**If Income-Producing:**
+- Current Annual NOI: Currency
+- Rent Roll: File upload **(Upload Later option)**
+- T-12 Operating Statement: File upload **(Upload Later option)**
+- Major Tenant (>15% of income): Text + Lease expiry date
+- Property Management: Radio [Self-Managed, Third Party]
+
+**If Not Income-Producing:**
+- Skip to Screen 6
+
+---
+
+### **Screen 6: Smart Document Upload (All Loan Types)**
+**AI-Assisted Option:**
+- "Upload any existing documents (Optional)"
+- Accepted: Offering Memorandums, Broker Packages, Financial Statements, Rent Rolls
+- **AI Extraction**: System extracts and pre-fills fields from uploaded docs
+- User reviews and confirms extracted data
+
+**Documents by Priority:**
+
+**Can Upload Now (Preferred):**
+- Purchase Contract (Acquisitions)
+- Current Loan Documents (Refinances)
+- Rent Roll (Income Properties)
+- Operating Statements
+- Business Plan/Executive Summary
+
+**Can Upload Later (Before Underwriting):**
+- Tax Returns (2-3 years)
+- Bank Statements
+- Personal Financial Statements
+- Entity Documents
+- Insurance Declarations
+- Property Photos
+
+---
+
+### **Screen 7: Review & Initial Submission**
+**Auto-Calculated Metrics Display:**
+- Loan-to-Value (LTV): Auto-calculated
+- Debt Service Coverage (DSCR): Auto-calculated (if income property)
+- Total Project Cost: Auto-calculated (Construction only)
+- Monthly Interest Estimate: Auto-calculated
+
+**Submission Confirmation:**
+- Missing Documents Summary (with "Upload Later" items noted)
+- Estimated Timeline to Term Sheet: 1-14 days
+- Submit for Term Sheet button
+
+---
+
+### **Screen 8: Post-Term Sheet - Underwriting Requirements**
+**(Only appears after Term Sheet acceptance)**
+
+**Documents Now Required:**
+
+**All Loan Types:**
+- 3 Years Complete Tax Returns
+- Detailed Personal Financial Statement
+- Bank/Investment Statements (3 months)
+- Entity Formation Documents
+- Operating Agreements
+- Insurance Certificates
+
+**Permanent Loans Additional:**
+- Lease Abstracts (major tenants)
+- Service Contracts
+- Property Tax Bills
+
+**Bridge Loans Additional:**
+- Detailed Renovation Budget
+- Contractor Bids (3 minimum)
+- Updated Exit Strategy Analysis
+
+**Construction Loans Additional:**
+- Final Construction Budget with GC Bid
+- Executed GC Contract
+- Building Permits **(Required before first draw)**
+- Pre-lease/Pre-sale Agreements (30-50% minimum)
+- Complete Architectural/Engineering Plans
+- Feasibility Study
+- Soils/Geotech Reports
+
+**Lender-Ordered (Borrower Pays, No Upload Needed):**
+- Appraisal ($5,000-25,000)
+- Phase I Environmental ($2,000-5,000)
+- Property Condition Assessment ($3,000-17,000)
+- Survey ($2,000-10,000)
+- Title Work
+
+---
+
+## Key Optimization Features
+
+1. **Progressive Disclosure**: Only 3 fields on first screen, building complexity gradually
+2. **Smart Routing**: Loan type determines exact path, skipping irrelevant fields
+3. **Upload Flexibility**: "Upload Later" for non-critical docs maintains momentum
+4. **AI Extraction**: Reduces manual entry when docs are available
+5. **Two-Stage Alignment**: Initial screens collect only what's needed for term sheet
+6. **Auto-Calculations**: Real-time metrics without user math
+7. **Conditional Logic**: Income property fields only appear when relevant
+8. **Document Prioritization**: Clear distinction between "need now" vs "can wait"
+9. **Exit-Focused**: Bridge loans prioritize exit strategy early
+10. **Construction Phasing**: Acknowledges permits can come later in process
+
+This flow typically completes initial submission in **7-10 minutes** while ensuring all critical information for term sheet decisions is captured upfront.
