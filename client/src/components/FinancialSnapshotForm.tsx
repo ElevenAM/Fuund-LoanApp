@@ -11,16 +11,17 @@ import DocumentUploadZone from "./DocumentUploadZone";
 interface FinancialSnapshotFormProps {
   onContinue?: (data: any) => void;
   onBack?: () => void;
+  initialData?: any;
 }
 
-export default function FinancialSnapshotForm({ onContinue, onBack }: FinancialSnapshotFormProps) {
+export default function FinancialSnapshotForm({ onContinue, onBack, initialData }: FinancialSnapshotFormProps) {
   const [formData, setFormData] = useState({
-    netWorth: "",
-    liquidAssets: "",
-    downPaymentSource: "",
-    creditScore: "",
-    hasBankruptcy: false,
-    authorizeCreditPull: false,
+    netWorth: initialData?.netWorth || "",
+    liquidAssets: initialData?.liquidAssets || "",
+    downPaymentSource: initialData?.downPaymentSource || "",
+    creditScore: initialData?.creditScore || "",
+    hasBankruptcy: initialData?.hasBankruptcy || false,
+    authorizeCreditPull: initialData?.authorizeCreditPull || false,
   });
 
   const handleSubmit = (e: React.FormEvent) => {

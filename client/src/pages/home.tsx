@@ -3,9 +3,23 @@ import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, FileText, TrendingUp } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { user, isLoading, isAuthenticated } = useAuth();
+  
+  const handleSignIn = () => {
+    window.location.href = "/api/auth/login";
+  };
+  
+  const handleStartApplication = () => {
+    if (isAuthenticated) {
+      setLocation("/apply");
+    } else {
+      window.location.href = "/api/auth/login?redirect=/apply";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,9 +32,25 @@ export default function Home() {
                 Commercial Loans
               </h1>
             </div>
-            <Button variant="outline" size="sm" data-testid="button-sign-in">
-              Sign In
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation("/dashboard")}
+                data-testid="button-dashboard"
+              >
+                Dashboard
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignIn}
+                data-testid="button-sign-in"
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -36,7 +66,7 @@ export default function Home() {
           <Button
             size="lg"
             className="h-12 px-8"
-            onClick={() => setLocation("/apply")}
+            onClick={handleStartApplication}
             data-testid="button-start-application"
           >
             Start Your Application
@@ -82,10 +112,19 @@ export default function Home() {
               Sign in to continue where you left off
             </p>
             <div className="flex gap-4 justify-center">
-              <Button variant="outline" data-testid="button-sign-in-bottom">
-                Sign In
-              </Button>
-              <Button onClick={() => setLocation("/dashboard")} data-testid="button-view-dashboard">
+              {!isAuthenticated && (
+                <Button
+                  variant="outline"
+                  onClick={handleSignIn}
+                  data-testid="button-sign-in-bottom"
+                >
+                  Sign In
+                </Button>
+              )}
+              <Button
+                onClick={() => setLocation("/dashboard")}
+                data-testid="button-view-dashboard"
+              >
                 View Dashboard
               </Button>
             </div>

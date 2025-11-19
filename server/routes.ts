@@ -17,6 +17,77 @@ const getObjectStorage = () => {
   return new Client({ bucketId });
 };
 
+/**
+ * Calculate monthly payment using the standard loan amortization formula:
+ * M = P * [r(1 + r)^n] / [(1 + r)^n - 1]
+ * where: P = principal, r = monthly interest rate, n = number of payments
+ */
+function calculateMonthlyPayment(
+  principal: number,
+  annualInterestRate: number,
+  loanTermYears: number
+): number {
+  const monthlyRate = annualInterestRate / 100 / 12;
+  const numPayments = loanTermYears * 12;
+  
+  if (monthlyRate === 0) {
+    return principal / numPayments; // Interest-free loan
+  }
+  
+  const payment =
+    (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+    (Math.pow(1 + monthlyRate, numPayments) - 1);
+  
+  return Math.round(payment * 100) / 100; // Round to cents
+}
+
+/**
+ * Auto-calculate loan metrics based on application data
+ */
+function calculateLoanMetrics(data: any): {
+  ltv?: string;
+  dscr?: string;
+  monthlyInterest?: string;
+} {
+  const metrics: any = {};
+  
+  try {
+    const loanAmount = parseFloat(data.loanAmount || "0");
+    const loanSpecifics = data.loanSpecifics || {};
+    
+    // Extract values from loanSpecifics JSON
+    const propertyValue = parseFloat(loanSpecifics.propertyValue || "0");
+    const interestRate = parseFloat(loanSpecifics.interestRate || "0");
+    const loanTermYears = parseFloat(loanSpecifics.loanTerm || "0");
+    const annualNOI = parseFloat(data.annualNOI || "0");
+    
+    // Calculate LTV: (Loan Amount / Property Value) × 100
+    if (loanAmount > 0 && propertyValue > 0) {
+      const ltv = (loanAmount / propertyValue) * 100;
+      metrics.ltv = ltv.toFixed(2);
+    }
+    
+    // Calculate Monthly Interest (first month): (Loan Amount × Annual Rate) / 12
+    if (loanAmount > 0 && interestRate > 0) {
+      const monthlyInterest = (loanAmount * (interestRate / 100)) / 12;
+      metrics.monthlyInterest = monthlyInterest.toFixed(2);
+    }
+    
+    // Calculate DSCR: Annual NOI / Annual Debt Service
+    // Annual Debt Service = Monthly Payment × 12
+    if (annualNOI > 0 && loanAmount > 0 && interestRate > 0 && loanTermYears > 0) {
+      const monthlyPayment = calculateMonthlyPayment(loanAmount, interestRate, loanTermYears);
+      const annualDebtService = monthlyPayment * 12;
+      const dscr = annualNOI / annualDebtService;
+      metrics.dscr = dscr.toFixed(2);
+    }
+  } catch (error) {
+    console.error("Error calculating loan metrics:", error);
+  }
+  
+  return metrics;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware setup
   await setupAuth(app);
@@ -53,8 +124,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Use validated data only
-      const application = await storage.createApplication(validationResult.data);
+      // Calculate loan metrics
+      const calculatedMetrics = calculateLoanMetrics(validationResult.data);
+      
+      // Merge calculated metrics with validated data
+      const applicationData = {
+        ...validationResult.data,
+        ...calculatedMetrics,
+      };
+      
+      // Use validated and calculated data
+      const application = await storage.createApplication(applicationData);
       res.json(application);
     } catch (error) {
       console.error("Error creating application:", error);
@@ -122,8 +202,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Use validated data only
-      const updated = await storage.updateApplication(req.params.id, validationResult.data);
+      // Merge existing application data with updates for metric calculation
+      const mergedData = {
+        ...application,
+        ...validationResult.data,
+      };
+      
+      // Recalculate loan metrics based on merged data
+      const calculatedMetrics = calculateLoanMetrics(mergedData);
+      
+      // Merge updates with calculated metrics
+      const updateData = {
+        ...validationResult.data,
+        ...calculatedMetrics,
+      };
+      
+      // Use validated and calculated data
+      const updated = await storage.updateApplication(req.params.id, updateData);
       res.json(updated);
     } catch (error) {
       console.error("Error updating application:", error);

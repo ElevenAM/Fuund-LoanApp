@@ -13,13 +13,14 @@ import constructionIcon from "@assets/generated_images/Construction_loan_icon_77
 
 interface QuickStartFormProps {
   onContinue?: (data: any) => void;
+  initialData?: any;
 }
 
-export default function QuickStartForm({ onContinue }: QuickStartFormProps) {
-  const [loanType, setLoanType] = useState("");
-  const [loanAmount, setLoanAmount] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
+export default function QuickStartForm({ onContinue, initialData }: QuickStartFormProps) {
+  const [loanType, setLoanType] = useState(initialData?.loanType || "");
+  const [loanAmount, setLoanAmount] = useState(initialData?.loanAmount || "");
+  const [city, setCity] = useState(initialData?.propertyCity || "");
+  const [state, setState] = useState(initialData?.propertyState || "");
 
   const loanTypes = [
     {
@@ -56,8 +57,14 @@ export default function QuickStartForm({ onContinue }: QuickStartFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Quick Start submitted:", { loanType, loanAmount, city, state });
-    onContinue?.({ loanType, loanAmount, city, state });
+    const data = {
+      loanType,
+      loanAmount,
+      propertyCity: city,
+      propertyState: state,
+    };
+    console.log("Quick Start submitted:", data);
+    onContinue?.(data);
   };
 
   return (

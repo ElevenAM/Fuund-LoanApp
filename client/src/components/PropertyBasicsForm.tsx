@@ -10,29 +10,45 @@ import { ChevronLeft } from "lucide-react";
 interface PropertyBasicsFormProps {
   onContinue?: (data: any) => void;
   onBack?: () => void;
+  initialData?: any;
 }
 
-export default function PropertyBasicsForm({ onContinue, onBack }: PropertyBasicsFormProps) {
+export default function PropertyBasicsForm({ onContinue, onBack, initialData }: PropertyBasicsFormProps) {
   const [formData, setFormData] = useState({
-    propertyName: "",
-    propertyAddress: "",
-    propertyType: "",
-    squareFootage: "",
-    units: "",
-    yearBuilt: "",
-    occupancy: "",
-    entityName: "",
-    borrowerType: "",
-    contactEmail: "",
-    contactPhone: "",
-    experience: "",
-    projectsCompleted: "",
+    propertyName: initialData?.propertyName || "",
+    propertyAddress: initialData?.propertyAddress || "",
+    propertyType: initialData?.propertyType || "",
+    squareFootage: initialData?.squareFootage || "",
+    units: initialData?.units || "",
+    yearBuilt: initialData?.yearBuilt || "",
+    occupancy: initialData?.occupancy || "",
+    entityName: initialData?.entityName || "",
+    borrowerType: initialData?.borrowerType || "",
+    contactEmail: initialData?.contactEmail || "",
+    contactPhone: initialData?.contactPhone || "",
+    experience: initialData?.yearsExperience || "",
+    projectsCompleted: initialData?.projectsCompleted || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Property Basics submitted:", formData);
-    onContinue?.(formData);
+    const data = {
+      propertyName: formData.propertyName,
+      propertyAddress: formData.propertyAddress,
+      propertyType: formData.propertyType,
+      squareFootage: formData.squareFootage,
+      units: formData.units,
+      yearBuilt: formData.yearBuilt,
+      occupancy: formData.occupancy,
+      entityName: formData.entityName,
+      borrowerType: formData.borrowerType,
+      contactEmail: formData.contactEmail,
+      contactPhone: formData.contactPhone,
+      yearsExperience: formData.experience,
+      projectsCompleted: formData.projectsCompleted,
+    };
+    console.log("Property Basics submitted:", data);
+    onContinue?.(data);
   };
 
   const updateField = (field: string, value: string) => {
