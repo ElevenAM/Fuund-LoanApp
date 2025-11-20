@@ -99,15 +99,32 @@ export default function Application() {
     { id: 7, name: "Review & Submit", status: (currentStep === 7 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
   ];
 
+  // Helper function to clean empty strings from payload
+  const cleanPayload = (obj: any) => {
+    const cleaned: any = {};
+    for (const key in obj) {
+      const value = obj[key];
+      // Convert empty strings to undefined so they don't get sent to the API
+      // Keep non-empty strings, numbers, booleans, objects, and arrays
+      if (value !== "" && value !== null) {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  };
+
   const handleContinue = async (data: any) => {
     console.log("Step data:", data);
     setSaveStatus("saving");
     
     try {
+      // Clean empty strings from incoming data
+      const cleanedData = cleanPayload(data);
+      
       // Merge new data with existing application data
       const mergedData = {
         ...applicationData,
-        ...data,
+        ...cleanedData,
       };
       
       // Determine next step
