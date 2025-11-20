@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Building2, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,105 @@ export default function Application() {
     },
   });
 
+  // Auto-save functionality with debouncing
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const autoSave = useCallback((data: any) => {
+    // Don't auto-save if we don't have an application ID yet
+    if (!applicationId) return;
+    
+    // Clear any pending save timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set status to saving
+    setSaveStatus("saving");
+    
+    // Debounce the save operation by 2 seconds
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Prepare the data for saving
+        const saveData = cleanPayload(data);
+        
+        // Calculate metrics before saving
+        let calculatedMetrics: any = {};
+        
+        // Calculate LTV if we have loan amount and property value
+        if (saveData.loanAmount && saveData.loanSpecifics?.propertyValue) {
+          const loanAmount = parseFloat(String(saveData.loanAmount).replace(/,/g, ""));
+          const propertyValue = parseFloat(String(saveData.loanSpecifics.propertyValue).replace(/,/g, ""));
+          if (loanAmount > 0 && propertyValue > 0) {
+            calculatedMetrics.calculatedLtv = ((loanAmount / propertyValue) * 100).toFixed(1);
+          }
+        }
+        
+        // Calculate DSCR if we have NOI and loan details
+        if (saveData.annualNOI && saveData.loanAmount && saveData.loanSpecifics?.interestRate) {
+          const noi = parseFloat(String(saveData.annualNOI).replace(/,/g, ""));
+          const loanAmount = parseFloat(String(saveData.loanAmount).replace(/,/g, ""));
+          const rate = parseFloat(String(saveData.loanSpecifics.interestRate)) / 100;
+          
+          // Annual debt service (interest only for simplicity)
+          const annualDebtService = loanAmount * rate;
+          
+          if (annualDebtService > 0) {
+            calculatedMetrics.calculatedDscr = (noi / annualDebtService).toFixed(2);
+          }
+        }
+        
+        // Calculate monthly interest
+        if (saveData.loanAmount && saveData.loanSpecifics?.interestRate) {
+          const loanAmount = parseFloat(String(saveData.loanAmount).replace(/,/g, ""));
+          const rate = parseFloat(String(saveData.loanSpecifics.interestRate)) / 100;
+          calculatedMetrics.calculatedMonthlyInterest = ((loanAmount * rate) / 12).toFixed(0);
+        }
+        
+        // Merge calculated metrics with save data
+        const finalData = {
+          ...saveData,
+          ...calculatedMetrics
+        };
+        
+        // Save to backend
+        const response = await apiRequest("PATCH", `/api/applications/${applicationId}`, finalData);
+        const updatedApp = await response.json();
+        
+        // Update local state
+        setApplicationData(updatedApp);
+        setSaveStatus("saved");
+        
+        // Show success feedback
+        toast({
+          description: "Changes saved",
+          duration: 2000,
+        });
+        
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/applications", applicationId] });
+        
+      } catch (error: any) {
+        console.error("Auto-save error:", error);
+        setSaveStatus("idle");
+        toast({
+          title: "Auto-save failed",
+          description: "Your changes could not be saved. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }, 2000); // 2 second debounce
+  }, [applicationId, toast]);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const steps = [
     { id: 1, name: "Quick Start", status: (currentStep > 1 ? "completed" : currentStep === 1 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
     { id: 2, name: "Property Details", status: (currentStep > 2 ? "completed" : currentStep === 2 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
@@ -129,6 +228,9 @@ export default function Application() {
         ...applicationData,
         ...cleanedData,
       };
+      
+      // Update local state immediately for responsiveness
+      setApplicationData(mergedData);
       
       // Determine next step
       const nextStep = Math.min(currentStep + 1, 7);
@@ -180,6 +282,19 @@ export default function Application() {
       });
     }
   };
+  
+  // Handler for form field changes to trigger auto-save
+  const handleFieldChange = useCallback((fieldData: any) => {
+    // Update local state
+    const mergedData = {
+      ...applicationData,
+      ...fieldData,
+    };
+    setApplicationData(mergedData);
+    
+    // Trigger auto-save with debouncing
+    autoSave(mergedData);
+  }, [applicationData, autoSave]);
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
