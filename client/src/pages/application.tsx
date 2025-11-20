@@ -11,7 +11,9 @@ import ProgressStepper from "@/components/ProgressStepper";
 import SaveIndicator from "@/components/SaveIndicator";
 import QuickStartForm from "@/components/QuickStartForm";
 import PropertyBasicsForm from "@/components/PropertyBasicsForm";
+import LoanSpecificsForm from "@/components/LoanSpecificsForm";
 import FinancialSnapshotForm from "@/components/FinancialSnapshotForm";
+import PropertyPerformanceForm from "@/components/PropertyPerformanceForm";
 import ReviewSubmitForm from "@/components/ReviewSubmitForm";
 
 export default function Application() {
@@ -250,8 +252,12 @@ export default function Application() {
         return <QuickStartForm onContinue={handleContinue} initialData={applicationData} />;
       case 2:
         return <PropertyBasicsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+      case 3:
+        return <LoanSpecificsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
       case 4:
         return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+      case 5:
+        return <PropertyPerformanceForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
       case 7:
         return <ReviewSubmitForm onSubmit={handleSubmit} onBack={handleBack} data={applicationData} />;
       default:
