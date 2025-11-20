@@ -112,6 +112,12 @@ export default function Application() {
     setSaveStatus("saving");
     
     try {
+      // Merge new data with existing application data
+      const mergedData = {
+        ...applicationData,
+        ...data,
+      };
+      
       // Determine next step
       const nextStep = Math.min(currentStep + 1, 7);
       const stepNames = [
@@ -125,24 +131,28 @@ export default function Application() {
       ];
       
       const updateData = {
-        ...data,
+        ...mergedData,
         currentStep: stepNames[nextStep - 1],
       };
       
+      let savedApp;
       if (applicationId) {
         // Update existing application
-        await updateApplicationMutation.mutateAsync({
+        savedApp = await updateApplicationMutation.mutateAsync({
           id: applicationId,
           data: updateData,
         });
       } else {
         // Create new application
-        const newApp = await createApplicationMutation.mutateAsync({
+        savedApp = await createApplicationMutation.mutateAsync({
           ...updateData,
           status: "draft",
         });
-        setApplicationId(newApp.id);
       }
+      
+      // Update local state with the saved application
+      setApplicationId(savedApp.id);
+      setApplicationData(savedApp);
       
       setSaveStatus("saved");
       setCurrentStep(nextStep);
