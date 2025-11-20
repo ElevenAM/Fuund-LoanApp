@@ -122,22 +122,24 @@ export default function Application() {
         "review-submit",
       ];
       
-      const updateData = {
+      const updatePayload = {
         ...mergedData,
         currentStep: stepNames[nextStep - 1],
       };
       
       let savedApp;
       if (applicationId) {
-        // Update existing application
+        // Update existing application - strip server-managed fields
+        const { userId, id, createdAt, updatedAt, ltv, dscr, monthlyInterest, ...updateData } = updatePayload;
         savedApp = await updateApplicationMutation.mutateAsync({
           id: applicationId,
           data: updateData,
         });
       } else {
-        // Create new application
+        // Create new application - strip server-managed fields except status
+        const { userId, id, createdAt, updatedAt, ltv, dscr, monthlyInterest, ...createData } = updatePayload;
         savedApp = await createApplicationMutation.mutateAsync({
-          ...updateData,
+          ...createData,
           status: "draft",
         });
       }
