@@ -359,13 +359,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/documents/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/applications/:appId/documents/:docId", isAuthenticated, async (req: any, res) => {
     try {
       // Get document by its own ID, not application ID
-      const document = await storage.getDocumentById(req.params.id);
+      const document = await storage.getDocumentById(req.params.docId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Verify document belongs to this application
+      if (document.applicationId !== req.params.appId) {
+        return res.status(403).json({ message: "Document does not belong to this application" });
       }
       
       // Verify user owns this document
@@ -392,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      await storage.deleteDocument(req.params.id);
+      await storage.deleteDocument(req.params.docId);
       res.json({ message: "Document deleted successfully" });
     } catch (error) {
       console.error("Error deleting document:", error);

@@ -14,6 +14,7 @@ import PropertyBasicsForm from "@/components/PropertyBasicsForm";
 import LoanSpecificsForm from "@/components/LoanSpecificsForm";
 import FinancialSnapshotForm from "@/components/FinancialSnapshotForm";
 import PropertyPerformanceForm from "@/components/PropertyPerformanceForm";
+import DocumentUploadForm from "@/components/DocumentUploadForm";
 import ReviewSubmitForm from "@/components/ReviewSubmitForm";
 
 export default function Application() {
@@ -258,6 +259,8 @@ export default function Application() {
         return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
       case 5:
         return <PropertyPerformanceForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+      case 6:
+        return <DocumentUploadForm onContinue={() => handleContinue({})} onBack={handleBack} applicationId={applicationId} existingDocuments={applicationData.documents} />;
       case 7:
         return <ReviewSubmitForm onSubmit={handleSubmit} onBack={handleBack} data={applicationData} />;
       default:
