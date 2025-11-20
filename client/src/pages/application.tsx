@@ -26,7 +26,7 @@ export default function Application() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/api/auth/login?redirect=/apply";
+      window.location.href = "/api/login?redirect=/apply";
     }
   }, [authLoading, isAuthenticated]);
   
@@ -66,12 +66,8 @@ export default function Application() {
   // Create application mutation
   const createApplicationMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/applications", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
-      return response;
+      const response = await apiRequest("POST", "/api/applications", data);
+      return await response.json();
     },
     onSuccess: (data) => {
       setApplicationId(data.id);
@@ -83,12 +79,8 @@ export default function Application() {
   // Update application mutation
   const updateApplicationMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await apiRequest(`/api/applications/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
-      return response;
+      const response = await apiRequest("PATCH", `/api/applications/${id}`, data);
+      return await response.json();
     },
     onSuccess: (data) => {
       setApplicationData(data);

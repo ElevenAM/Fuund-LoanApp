@@ -13,7 +13,7 @@ export default function Dashboard() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/api/auth/login?redirect=/dashboard";
+      window.location.href = "/api/login?redirect=/dashboard";
     }
   }, [authLoading, isAuthenticated]);
   
@@ -24,7 +24,7 @@ export default function Dashboard() {
   });
   
   const handleSignOut = () => {
-    window.location.href = "/api/auth/logout";
+    window.location.href = "/api/logout";
   };
   
   if (authLoading || applicationsLoading) {

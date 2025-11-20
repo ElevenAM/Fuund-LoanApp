@@ -10,14 +10,14 @@ export default function Home() {
   const { user, isLoading, isAuthenticated } = useAuth();
   
   const handleSignIn = () => {
-    window.location.href = "/api/auth/login";
+    window.location.href = "/api/login";
   };
   
   const handleStartApplication = () => {
     if (isAuthenticated) {
       setLocation("/apply");
     } else {
-      window.location.href = "/api/auth/login?redirect=/apply";
+      window.location.href = "/api/login?redirect=/apply";
     }
   };
 
