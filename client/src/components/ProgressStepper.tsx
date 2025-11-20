@@ -8,23 +8,37 @@ interface Step {
 
 interface ProgressStepperProps {
   steps: Step[];
+  onStepClick?: (stepId: number) => void;
 }
 
-export default function ProgressStepper({ steps }: ProgressStepperProps) {
+export default function ProgressStepper({ steps, onStepClick }: ProgressStepperProps) {
+  const handleStepClick = (step: Step) => {
+    // Only allow navigation to completed steps
+    // Don't navigate if already on current step
+    if (step.status === "completed" && onStepClick) {
+      console.log(`Navigating to step ${step.id}: ${step.name}`);
+      onStepClick(step.id);
+    }
+  };
+
   return (
     <nav aria-label="Progress" className="px-6 py-8">
       <ol className="space-y-4">
         {steps.map((step, stepIdx) => (
           <li key={step.id} className="relative">
             {step.status === "completed" ? (
-              <div className="flex items-start group" data-testid={`step-completed-${step.id}`}>
+              <button
+                onClick={() => handleStepClick(step)}
+                className="flex items-start group w-full text-left hover:opacity-80 transition-opacity cursor-pointer"
+                data-testid={`step-completed-${step.id}`}
+              >
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary flex-shrink-0">
                   <Check className="w-5 h-5 text-primary-foreground" data-testid={`icon-check-${step.id}`} />
                 </span>
-                <span className="ml-3 text-sm font-medium text-foreground" data-testid={`text-step-name-${step.id}`}>
+                <span className="ml-3 text-sm font-medium text-foreground group-hover:underline" data-testid={`text-step-name-${step.id}`}>
                   {step.name}
                 </span>
-              </div>
+              </button>
             ) : step.status === "current" ? (
               <div className="flex items-start" data-testid={`step-current-${step.id}`}>
                 <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-primary bg-background flex-shrink-0">
@@ -35,7 +49,7 @@ export default function ProgressStepper({ steps }: ProgressStepperProps) {
                 </span>
               </div>
             ) : (
-              <div className="flex items-start group" data-testid={`step-upcoming-${step.id}`}>
+              <div className="flex items-start group opacity-50 cursor-not-allowed" data-testid={`step-upcoming-${step.id}`}>
                 <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-border bg-background flex-shrink-0">
                   <span className="w-2 h-2 rounded-full bg-muted" data-testid={`indicator-upcoming-${step.id}`} />
                 </span>

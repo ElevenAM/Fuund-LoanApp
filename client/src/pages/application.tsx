@@ -41,7 +41,7 @@ export default function Application() {
   
   // Initialize application on mount
   useEffect(() => {
-    if (applications && applications.length > 0) {
+    if (applications && Array.isArray(applications) && applications.length > 0) {
       // Find the most recent draft application
       const draftApp = applications
         .filter((app: any) => app.status === "draft")
@@ -351,6 +351,32 @@ export default function Application() {
     }
     setLocation("/dashboard");
   };
+
+  const handleStepClick = async (stepId: number) => {
+    // Save current progress before navigating
+    if (applicationId) {
+      setSaveStatus("saving");
+      try {
+        const response = await updateApplicationMutation.mutateAsync({
+          id: applicationId,
+          data: {}, // Save current state
+        });
+        
+        // Update the local application data with the saved response
+        if (response) {
+          setApplicationData(response);
+        }
+        
+        setSaveStatus("saved");
+      } catch (error) {
+        console.error("Error saving before navigation:", error);
+        setSaveStatus("idle");
+      }
+    }
+    
+    // Navigate to the selected step
+    setCurrentStep(stepId);
+  };
   
   const renderStep = () => {
     if (authLoading || applicationsLoading) {
@@ -407,7 +433,7 @@ export default function Application() {
             <h1 className="font-semibold">Commercial Loans</h1>
           </div>
         </div>
-        <ProgressStepper steps={steps} />
+        <ProgressStepper steps={steps} onStepClick={handleStepClick} />
       </aside>
 
       <div className="flex-1 flex flex-col">
@@ -427,7 +453,7 @@ export default function Application() {
                       <h1 className="font-semibold">Commercial Loans</h1>
                     </div>
                   </div>
-                  <ProgressStepper steps={steps} />
+                  <ProgressStepper steps={steps} onStepClick={handleStepClick} />
                 </SheetContent>
               </Sheet>
               <div className="lg:hidden flex items-center gap-2">
