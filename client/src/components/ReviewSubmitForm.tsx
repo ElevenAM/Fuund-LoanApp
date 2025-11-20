@@ -56,8 +56,10 @@ export default function ReviewSubmitForm({ onSubmit, onBack, data = {} }: Review
     return typeMap[type] || type;
   };
 
-  // Extract loan specifics
+  // Extract loan specifics and property performance data
   const loanSpecifics = data.loanSpecifics || {};
+  const annualGrossIncome = loanSpecifics.annualGrossIncome || data.annualGrossIncome;
+  const annualOperatingExpenses = loanSpecifics.annualOperatingExpenses || data.annualOperatingExpenses;
 
   // Check for missing required information
   const missingFields = [];
@@ -308,7 +310,7 @@ export default function ReviewSubmitForm({ onSubmit, onBack, data = {} }: Review
         )}
 
         {/* Property Performance */}
-        {(data.annualGrossIncome || data.annualOperatingExpenses || data.annualNOI) && (
+        {(annualGrossIncome || annualOperatingExpenses || data.annualNOI) && (
           <Card className="p-8">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -317,19 +319,19 @@ export default function ReviewSubmitForm({ onSubmit, onBack, data = {} }: Review
               </div>
             </div>
             <div className="space-y-3">
-              {data.annualGrossIncome && (
+              {annualGrossIncome && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Annual Gross Income</span>
                   <span className="text-sm font-medium">
-                    {formatCurrency(data.annualGrossIncome)}
+                    {formatCurrency(annualGrossIncome)}
                   </span>
                 </div>
               )}
-              {data.annualOperatingExpenses && (
+              {annualOperatingExpenses && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Annual Operating Expenses</span>
                   <span className="text-sm font-medium">
-                    {formatCurrency(data.annualOperatingExpenses)}
+                    {formatCurrency(annualOperatingExpenses)}
                   </span>
                 </div>
               )}

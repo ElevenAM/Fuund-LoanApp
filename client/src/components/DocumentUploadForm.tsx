@@ -48,26 +48,26 @@ export default function DocumentUploadForm({
   );
   const [uploadingType, setUploadingType] = useState<string | null>(null);
 
-  // Define document requirements
+  // Define document requirements - all optional for initial submission
   const documentRequirements: DocumentRequirement[] = [
     {
       type: "financial-statements",
       label: "Financial Statements",
-      required: true,
+      required: false, // Changed to optional
       description: "Last 3 years of business financial statements (P&L, Balance Sheet, Cash Flow)",
       acceptedTypes: ".pdf,.xls,.xlsx"
     },
     {
       type: "tax-returns",
       label: "Tax Returns",
-      required: true,
+      required: false, // Changed to optional
       description: "Last 3 years of business and personal tax returns",
       acceptedTypes: ".pdf"
     },
     {
       type: "rent-roll",
       label: "Rent Roll",
-      required: true,
+      required: false, // Changed to optional
       description: "Current rent roll showing all tenants, rents, and lease terms",
       acceptedTypes: ".pdf,.xls,.xlsx"
     },
@@ -230,18 +230,16 @@ export default function DocumentUploadForm({
   };
 
   const handleContinue = () => {
-    // Check if all required documents are uploaded
-    const missingRequired = documentRequirements
-      .filter(req => req.required && !uploadedDocs[req.type])
-      .map(req => req.label);
-
-    if (missingRequired.length > 0) {
+    // Documents are now optional - users can upload later
+    // Show a reminder if no documents uploaded
+    const uploadedCount = Object.keys(uploadedDocs).length;
+    
+    if (uploadedCount === 0) {
       toast({
-        title: "Missing required documents",
-        description: `Please upload: ${missingRequired.join(", ")}`,
-        variant: "destructive",
+        title: "No documents uploaded",
+        description: "You can upload supporting documents later from your dashboard.",
+        duration: 3000,
       });
-      return;
     }
 
     onContinue?.();

@@ -26,15 +26,26 @@ interface Tenant {
 }
 
 export default function PropertyPerformanceForm({ onContinue, onBack, initialData }: PropertyPerformanceFormProps) {
-  const [annualGrossIncome, setAnnualGrossIncome] = useState(initialData?.annualGrossIncome || "");
-  const [annualOperatingExpenses, setAnnualOperatingExpenses] = useState(initialData?.annualOperatingExpenses || "");
+  // Load data from both direct fields and loanSpecifics
+  const loanSpecifics = initialData?.loanSpecifics || {};
+  
+  const [annualGrossIncome, setAnnualGrossIncome] = useState(
+    loanSpecifics.annualGrossIncome || initialData?.annualGrossIncome || ""
+  );
+  const [annualOperatingExpenses, setAnnualOperatingExpenses] = useState(
+    loanSpecifics.annualOperatingExpenses || initialData?.annualOperatingExpenses || ""
+  );
   const [annualNOI, setAnnualNOI] = useState(initialData?.annualNOI || "");
   const [occupancyRate, setOccupancyRate] = useState(initialData?.occupancy || "");
   const [majorTenants, setMajorTenants] = useState<Tenant[]>(
-    initialData?.majorTenants || []
+    loanSpecifics.majorTenants || initialData?.majorTenants || []
   );
-  const [recentImprovements, setRecentImprovements] = useState(initialData?.recentImprovements || "");
-  const [plannedImprovements, setPlannedImprovements] = useState(initialData?.plannedImprovements || "");
+  const [recentImprovements, setRecentImprovements] = useState(
+    loanSpecifics.recentImprovements || initialData?.recentImprovements || ""
+  );
+  const [plannedImprovements, setPlannedImprovements] = useState(
+    loanSpecifics.plannedImprovements || initialData?.plannedImprovements || ""
+  );
   
   // Property type and loan type from initial data
   const propertyType = initialData?.propertyType || "";
@@ -77,21 +88,41 @@ export default function PropertyPerformanceForm({ onContinue, onBack, initialDat
     
     // Only include performance data for income-producing properties
     if (isIncomeProducing) {
-      data.annualGrossIncome = annualGrossIncome;
-      data.annualOperatingExpenses = annualOperatingExpenses;
+      // Schema only has annualNOI and occupancy fields
       data.annualNOI = annualNOI;
       data.occupancy = occupancyRate;
+      
+      // Store other property performance data in loanSpecifics JSON field
+      data.loanSpecifics = {
+        ...(initialData?.loanSpecifics || {}),
+        annualGrossIncome: annualGrossIncome,
+        annualOperatingExpenses: annualOperatingExpenses,
+      };
+      
       if (majorTenants.length > 0) {
-        data.majorTenants = majorTenants;
+        data.loanSpecifics.majorTenants = majorTenants;
       }
-    }
-    
-    // Always include improvements data
-    if (recentImprovements) {
-      data.recentImprovements = recentImprovements;
-    }
-    if (plannedImprovements) {
-      data.plannedImprovements = plannedImprovements;
+      
+      // Store improvements in loanSpecifics as well
+      if (recentImprovements) {
+        data.loanSpecifics.recentImprovements = recentImprovements;
+      }
+      if (plannedImprovements) {
+        data.loanSpecifics.plannedImprovements = plannedImprovements;
+      }
+    } else {
+      // For non-income properties, still store improvements if provided
+      if (recentImprovements || plannedImprovements) {
+        data.loanSpecifics = {
+          ...(initialData?.loanSpecifics || {}),
+        };
+        if (recentImprovements) {
+          data.loanSpecifics.recentImprovements = recentImprovements;
+        }
+        if (plannedImprovements) {
+          data.loanSpecifics.plannedImprovements = plannedImprovements;
+        }
+      }
     }
 
     onContinue?.(data);
