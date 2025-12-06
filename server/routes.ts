@@ -4,7 +4,227 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import multer from "multer";
 import { Client } from "@replit/object-storage";
-import { insertLoanApplicationSchema, insertDocumentSchema } from "@shared/schema";
+import { insertLoanApplicationSchema, insertDocumentSchema, type LoanApplication } from "@shared/schema";
+import sgMail from "@sendgrid/mail";
+
+const NOTIFICATION_EMAIL = "liamnguyen.mail@gmail.com";
+
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
+
+function formatCurrency(value: string | number | null | undefined): string {
+  if (!value) return "N/A";
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+function formatLoanType(type: string): string {
+  const types: Record<string, string> = {
+    "permanent-acquisition": "Permanent - Acquisition",
+    "permanent-refinance": "Permanent - Refinance",
+    "bridge-acquisition": "Bridge - Acquisition",
+    "bridge-refinance": "Bridge - Refinance",
+    "construction": "Construction",
+  };
+  return types[type] || type;
+}
+
+function formatPropertyType(type: string | null): string {
+  if (!type) return "N/A";
+  const types: Record<string, string> = {
+    "multifamily": "Multifamily",
+    "office": "Office",
+    "retail": "Retail",
+    "industrial": "Industrial",
+    "mixed-use": "Mixed Use",
+    "self-storage": "Self Storage",
+    "land": "Land",
+  };
+  return types[type] || type;
+}
+
+async function sendApplicationEmail(application: LoanApplication): Promise<void> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn("SendGrid API key not configured, skipping email notification");
+    return;
+  }
+
+  const loanSpecifics = application.loanSpecifics as Record<string, any> || {};
+  
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #1a365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+        New Loan Application Submitted
+      </h1>
+      
+      <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Application Summary</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Application ID:</strong></td>
+            <td style="padding: 8px 0;">${application.id}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Loan Type:</strong></td>
+            <td style="padding: 8px 0;">${formatLoanType(application.loanType)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Loan Amount:</strong></td>
+            <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #2b6cb0;">${formatCurrency(application.loanAmount)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>LTV:</strong></td>
+            <td style="padding: 8px 0;">${application.ltv ? `${application.ltv}%` : "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>DSCR:</strong></td>
+            <td style="padding: 8px 0;">${application.dscr || "N/A"}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Property Details</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Property Name:</strong></td>
+            <td style="padding: 8px 0;">${application.propertyName || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Address:</strong></td>
+            <td style="padding: 8px 0;">${application.propertyAddress || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>City, State:</strong></td>
+            <td style="padding: 8px 0;">${application.propertyCity || ""}, ${application.propertyState || ""}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Property Type:</strong></td>
+            <td style="padding: 8px 0;">${formatPropertyType(application.propertyType)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Square Footage:</strong></td>
+            <td style="padding: 8px 0;">${application.squareFootage ? `${Number(application.squareFootage).toLocaleString()} sq ft` : "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Units:</strong></td>
+            <td style="padding: 8px 0;">${application.units || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Year Built:</strong></td>
+            <td style="padding: 8px 0;">${application.yearBuilt || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Occupancy:</strong></td>
+            <td style="padding: 8px 0;">${application.occupancy ? `${application.occupancy}%` : "N/A"}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Borrower Information</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Entity Name:</strong></td>
+            <td style="padding: 8px 0;">${application.entityName || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Borrower Type:</strong></td>
+            <td style="padding: 8px 0;">${application.borrowerType || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Contact Email:</strong></td>
+            <td style="padding: 8px 0;">${application.contactEmail || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Contact Phone:</strong></td>
+            <td style="padding: 8px 0;">${application.contactPhone || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Years of Experience:</strong></td>
+            <td style="padding: 8px 0;">${application.yearsExperience || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Projects Completed:</strong></td>
+            <td style="padding: 8px 0;">${application.projectsCompleted || "N/A"}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Financial Information</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Net Worth:</strong></td>
+            <td style="padding: 8px 0;">${formatCurrency(application.netWorth)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Liquid Assets:</strong></td>
+            <td style="padding: 8px 0;">${formatCurrency(application.liquidAssets)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Down Payment Source:</strong></td>
+            <td style="padding: 8px 0;">${application.downPaymentSource || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Credit Score:</strong></td>
+            <td style="padding: 8px 0;">${application.creditScore || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Annual NOI:</strong></td>
+            <td style="padding: 8px 0;">${formatCurrency(application.annualNOI)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #718096;"><strong>Monthly Interest:</strong></td>
+            <td style="padding: 8px 0;">${formatCurrency(application.monthlyInterest)}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${loanSpecifics && Object.keys(loanSpecifics).length > 0 ? `
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Loan Specifics</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          ${loanSpecifics.propertyValue ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Property Value:</strong></td><td style="padding: 8px 0;">${formatCurrency(loanSpecifics.propertyValue)}</td></tr>` : ""}
+          ${loanSpecifics.interestRate ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Interest Rate:</strong></td><td style="padding: 8px 0;">${loanSpecifics.interestRate}%</td></tr>` : ""}
+          ${loanSpecifics.loanTerm ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Loan Term:</strong></td><td style="padding: 8px 0;">${loanSpecifics.loanTerm} years</td></tr>` : ""}
+          ${loanSpecifics.amortization ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Amortization:</strong></td><td style="padding: 8px 0;">${loanSpecifics.amortization} years</td></tr>` : ""}
+          ${loanSpecifics.prepaymentPenalty ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Prepayment Penalty:</strong></td><td style="padding: 8px 0;">${loanSpecifics.prepaymentPenalty}</td></tr>` : ""}
+          ${loanSpecifics.recourse ? `<tr><td style="padding: 8px 0; color: #718096;"><strong>Recourse:</strong></td><td style="padding: 8px 0;">${loanSpecifics.recourse}</td></tr>` : ""}
+        </table>
+      </div>
+      ` : ""}
+
+      <div style="margin-top: 30px; padding: 15px; background: #ebf8ff; border-radius: 8px; text-align: center;">
+        <p style="margin: 0; color: #2b6cb0;">
+          <strong>Submitted:</strong> ${new Date().toLocaleString("en-US", { 
+            dateStyle: "full", 
+            timeStyle: "short" 
+          })}
+        </p>
+      </div>
+    </div>
+  `;
+
+  const msg = {
+    to: NOTIFICATION_EMAIL,
+    from: NOTIFICATION_EMAIL,
+    subject: `New Loan Application: ${formatCurrency(application.loanAmount)} - ${application.propertyCity || "Unknown City"}, ${application.propertyState || ""}`,
+    html: emailHtml,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Application email sent successfully to ${NOTIFICATION_EMAIL}`);
+  } catch (error: any) {
+    console.error("SendGrid email error:", error?.response?.body || error.message);
+  }
+}
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -219,6 +439,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Use validated and calculated data
       const updated = await storage.updateApplication(req.params.id, updateData);
+      
+      // Send email notification when application is submitted
+      const isBeingSubmitted = validationResult.data.status === "submitted" && application.status !== "submitted";
+      if (isBeingSubmitted) {
+        await sendApplicationEmail(updated);
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("Error updating application:", error);

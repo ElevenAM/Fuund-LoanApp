@@ -164,6 +164,14 @@ Preferred communication style: Simple, everyday language.
 - esbuild (production bundling)
 - TypeScript 5+ with strict mode
 
+### Email Notifications
+
+**Email Provider**: SendGrid
+- Sends formatted HTML email notifications when applications are submitted
+- Recipient: liamnguyen.mail@gmail.com
+- Email includes complete application summary: loan details, property info, borrower data, and financial metrics
+- Non-blocking: email failures don't prevent application submission
+
 ### Environment Variables Required
 
 - `DATABASE_URL` - PostgreSQL connection string (Neon)
@@ -171,6 +179,7 @@ Preferred communication style: Simple, everyday language.
 - `DEFAULT_OBJECT_STORAGE_BUCKET_ID` - Replit Object Storage bucket
 - `ISSUER_URL` - OIDC issuer (defaults to Replit)
 - `REPL_ID` - Replit environment identifier
+- `SENDGRID_API_KEY` - SendGrid API key for email notifications
 
 ### Asset Management
 
