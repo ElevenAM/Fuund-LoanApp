@@ -25,6 +25,7 @@ export default function Application() {
   const [saveStatus, setSaveStatus] = useState<"saving" | "saved" | "idle">("saved");
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [applicationData, setApplicationData] = useState<any>({});
+  const [hasInitialized, setHasInitialized] = useState(false);
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -41,6 +42,8 @@ export default function Application() {
   
   // Initialize application on mount
   useEffect(() => {
+    if (hasInitialized) return;
+    
     if (applications && Array.isArray(applications) && applications.length > 0) {
       // Find the most recent draft application
       const draftApp = applications
@@ -51,7 +54,7 @@ export default function Application() {
         setApplicationId(draftApp.id);
         setApplicationData(draftApp);
         
-        // Set current step based on saved progress
+        // Set current step based on saved progress (only on initial load)
         const stepMap: Record<string, number> = {
           "quick-start": 1,
           "property-details": 2,
@@ -62,9 +65,13 @@ export default function Application() {
           "review-submit": 7,
         };
         setCurrentStep(stepMap[draftApp.currentStep] || 1);
+        setHasInitialized(true);
       }
+    } else if (applications && Array.isArray(applications)) {
+      // No draft applications found, mark as initialized
+      setHasInitialized(true);
     }
-  }, [applications]);
+  }, [applications, hasInitialized]);
   
   // Create application mutation
   const createApplicationMutation = useMutation({
