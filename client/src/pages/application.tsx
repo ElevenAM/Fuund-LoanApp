@@ -22,6 +22,7 @@ export default function Application() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [maxStepReached, setMaxStepReached] = useState(1);
   const [saveStatus, setSaveStatus] = useState<"saving" | "saved" | "idle">("saved");
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [applicationData, setApplicationData] = useState<any>({});
@@ -64,7 +65,9 @@ export default function Application() {
           "documents": 6,
           "review-submit": 7,
         };
-        setCurrentStep(stepMap[draftApp.currentStep] || 1);
+        const savedStep = stepMap[draftApp.currentStep] || 1;
+        setCurrentStep(savedStep);
+        setMaxStepReached(savedStep);
         setHasInitialized(true);
       }
     } else if (applications && Array.isArray(applications)) {
@@ -198,14 +201,20 @@ export default function Application() {
     };
   }, []);
 
+  const getStepStatus = (stepId: number): "completed" | "current" | "upcoming" => {
+    if (stepId === currentStep) return "current";
+    if (stepId <= maxStepReached) return "completed";
+    return "upcoming";
+  };
+
   const steps = [
-    { id: 1, name: "Quick Start", status: (currentStep > 1 ? "completed" : currentStep === 1 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 2, name: "Property Details", status: (currentStep > 2 ? "completed" : currentStep === 2 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 3, name: "Loan Specifics", status: (currentStep > 3 ? "completed" : currentStep === 3 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 4, name: "Financial Snapshot", status: (currentStep > 4 ? "completed" : currentStep === 4 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 5, name: "Property Performance", status: (currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 6, name: "Documents", status: (currentStep > 6 ? "completed" : currentStep === 6 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
-    { id: 7, name: "Review & Submit", status: (currentStep === 7 ? "current" : "upcoming") as "completed" | "current" | "upcoming" },
+    { id: 1, name: "Quick Start", status: getStepStatus(1) },
+    { id: 2, name: "Property Details", status: getStepStatus(2) },
+    { id: 3, name: "Loan Specifics", status: getStepStatus(3) },
+    { id: 4, name: "Financial Snapshot", status: getStepStatus(4) },
+    { id: 5, name: "Property Performance", status: getStepStatus(5) },
+    { id: 6, name: "Documents", status: getStepStatus(6) },
+    { id: 7, name: "Review & Submit", status: getStepStatus(7) },
   ];
 
   // Helper function to clean empty strings from payload
@@ -279,6 +288,7 @@ export default function Application() {
       
       setSaveStatus("saved");
       setCurrentStep(nextStep);
+      setMaxStepReached((prev) => Math.max(prev, nextStep));
     } catch (error: any) {
       console.error("Error saving application:", error);
       setSaveStatus("idle");
