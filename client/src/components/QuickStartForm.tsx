@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import LoanTypeCard from "./LoanTypeCard";
 import buildingIcon from "@assets/generated_images/Permanent_acquisition_building_icon_c15f24a8.png";
 import refinanceIcon from "@assets/generated_images/Permanent_refinance_building_icon_f8352c80.png";
@@ -14,9 +15,10 @@ import constructionIcon from "@assets/generated_images/Construction_loan_icon_77
 interface QuickStartFormProps {
   onContinue?: (data: any) => void;
   initialData?: any;
+  showValidation?: boolean;
 }
 
-export default function QuickStartForm({ onContinue, initialData }: QuickStartFormProps) {
+export default function QuickStartForm({ onContinue, initialData, showValidation }: QuickStartFormProps) {
   const [loanType, setLoanType] = useState(initialData?.loanType || "");
   const [loanAmount, setLoanAmount] = useState(initialData?.loanAmount || "");
   const [city, setCity] = useState(initialData?.propertyCity || "");
@@ -86,7 +88,10 @@ export default function QuickStartForm({ onContinue, initialData }: QuickStartFo
                 What type of loan do you need? <span className="text-destructive">*</span>
               </Label>
               <RadioGroup value={loanType} onValueChange={setLoanType}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className={cn(
+                  "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1 rounded-md",
+                  showValidation && !loanType && "ring-2 ring-destructive"
+                )}>
                   {loanTypes.map((type) => (
                     <LoanTypeCard
                       key={type.value}
@@ -110,7 +115,7 @@ export default function QuickStartForm({ onContinue, initialData }: QuickStartFo
                   id="loan-amount"
                   type="text"
                   placeholder="1,000,000"
-                  className="pl-7 h-12"
+                  className={cn("pl-7 h-12", showValidation && !loanAmount && "border-destructive")}
                   value={loanAmount}
                   onChange={(e) => setLoanAmount(e.target.value)}
                   data-testid="input-loan-amount"
@@ -127,7 +132,7 @@ export default function QuickStartForm({ onContinue, initialData }: QuickStartFo
                   id="city"
                   type="text"
                   placeholder="New York"
-                  className="mt-2 h-12"
+                  className={cn("mt-2 h-12", showValidation && !city && "border-destructive")}
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   data-testid="input-city"
@@ -138,7 +143,7 @@ export default function QuickStartForm({ onContinue, initialData }: QuickStartFo
                   State <span className="text-destructive">*</span>
                 </Label>
                 <Select value={state} onValueChange={setState}>
-                  <SelectTrigger className="mt-2 h-12" data-testid="select-state">
+                  <SelectTrigger className={cn("mt-2 h-12", showValidation && !state && "border-destructive")} data-testid="select-state">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>

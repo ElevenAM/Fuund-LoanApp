@@ -6,14 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PropertyBasicsFormProps {
   onContinue?: (data: any) => void;
   onBack?: () => void;
   initialData?: any;
+  showValidation?: boolean;
 }
 
-export default function PropertyBasicsForm({ onContinue, onBack, initialData }: PropertyBasicsFormProps) {
+export default function PropertyBasicsForm({ onContinue, onBack, initialData, showValidation }: PropertyBasicsFormProps) {
   const [formData, setFormData] = useState({
     propertyName: initialData?.propertyName || "",
     propertyAddress: initialData?.propertyAddress || "",
@@ -89,7 +91,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                 value={formData.propertyName}
                 onChange={(e) => updateField("propertyName", e.target.value)}
                 placeholder="123 Main Street, Suite 100"
-                className="mt-2"
+                className={cn("mt-2", showValidation && !formData.propertyName && "border-destructive")}
                 data-testid="input-property-name"
               />
             </div>
@@ -100,7 +102,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                   Property Type <span className="text-destructive">*</span>
                 </Label>
                 <Select value={formData.propertyType} onValueChange={(val) => updateField("propertyType", val)}>
-                  <SelectTrigger className="mt-2" data-testid="select-property-type">
+                  <SelectTrigger className={cn("mt-2", showValidation && !formData.propertyType && "border-destructive")} data-testid="select-property-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -173,7 +175,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                   value={formData.entityName}
                   onChange={(e) => updateField("entityName", e.target.value)}
                   placeholder="ABC Properties LLC"
-                  className="mt-2"
+                  className={cn("mt-2", showValidation && !formData.entityName && "border-destructive")}
                   data-testid="input-entity-name"
                 />
               </div>
@@ -183,7 +185,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                   Borrower Type <span className="text-destructive">*</span>
                 </Label>
                 <Select value={formData.borrowerType} onValueChange={(val) => updateField("borrowerType", val)}>
-                  <SelectTrigger className="mt-2" data-testid="select-borrower-type">
+                  <SelectTrigger className={cn("mt-2", showValidation && !formData.borrowerType && "border-destructive")} data-testid="select-borrower-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,7 +210,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                   value={formData.contactEmail}
                   onChange={(e) => updateField("contactEmail", e.target.value)}
                   placeholder="john@example.com"
-                  className="mt-2"
+                  className={cn("mt-2", showValidation && !formData.contactEmail && "border-destructive")}
                   data-testid="input-contact-email"
                 />
               </div>
@@ -223,7 +225,7 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData }: 
                   value={formData.contactPhone}
                   onChange={(e) => updateField("contactPhone", e.target.value)}
                   placeholder="(555) 123-4567"
-                  className="mt-2"
+                  className={cn("mt-2", showValidation && !formData.contactPhone && "border-destructive")}
                   data-testid="input-contact-phone"
                 />
               </div>

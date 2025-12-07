@@ -393,6 +393,10 @@ export default function Application() {
   };
 
   const handleStepClick = async (stepId: number) => {
+    // Mark current step as visited and show validation when navigating away
+    markStepVisited(currentStep);
+    setShowValidation(true);
+    
     // Save current progress before navigating
     if (applicationId) {
       setSaveStatus("saving");
@@ -431,15 +435,15 @@ export default function Application() {
     
     switch (currentStep) {
       case 1:
-        return <QuickStartForm onContinue={handleContinue} initialData={applicationData} />;
+        return <QuickStartForm onContinue={handleContinue} initialData={applicationData} showValidation={showValidation} />;
       case 2:
-        return <PropertyBasicsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+        return <PropertyBasicsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 3:
-        return <LoanSpecificsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+        return <LoanSpecificsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 4:
-        return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+        return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 5:
-        return <PropertyPerformanceForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} />;
+        return <PropertyPerformanceForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 6:
         return <DocumentUploadForm onContinue={() => handleContinue({})} onBack={handleBack} applicationId={applicationId} existingDocuments={applicationData.documents} />;
       case 7:
