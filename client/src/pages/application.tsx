@@ -251,7 +251,6 @@ export default function Application() {
   };
 
   const handleContinue = async (data: any) => {
-    console.log("Step data:", data);
     setSaveStatus("saving");
     
     try {

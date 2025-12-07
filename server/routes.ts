@@ -568,7 +568,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         let storagePath = null;
-        let storageUrl = null;
 
         // Upload to object storage if file is provided
         if (file) {
@@ -614,9 +613,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         if (storagePath) {
           documentData.storagePath = storagePath;
-        }
-        if (storageUrl) {
-          documentData.storageUrl = storageUrl;
         }
         if (file) {
           documentData.uploadedAt = new Date();

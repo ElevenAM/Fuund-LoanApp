@@ -49,7 +49,6 @@ export default function PropertyBasicsForm({ onContinue, onBack, initialData, sh
       yearsExperience: formData.experience,
       projectsCompleted: formData.projectsCompleted,
     };
-    console.log("Property Basics submitted:", data);
     onContinue?.(data);
   };
 

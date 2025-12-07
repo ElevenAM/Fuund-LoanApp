@@ -26,7 +26,6 @@ export default function FinancialSnapshotForm({ onContinue, onBack, initialData 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Financial Snapshot submitted:", formData);
     onContinue?.(formData);
   };
 

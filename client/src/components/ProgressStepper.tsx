@@ -17,7 +17,6 @@ interface ProgressStepperProps {
 export default function ProgressStepper({ steps, onStepClick }: ProgressStepperProps) {
   const handleStepClick = (step: Step) => {
     if (step.status === "completed" && onStepClick) {
-      console.log(`Navigating to step ${step.id}: ${step.name}`);
       onStepClick(step.id);
     }
   };

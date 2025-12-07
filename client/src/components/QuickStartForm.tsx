@@ -65,7 +65,6 @@ export default function QuickStartForm({ onContinue, initialData, showValidation
       propertyCity: city,
       propertyState: state,
     };
-    console.log("Quick Start submitted:", data);
     onContinue?.(data);
   };
 

@@ -42,7 +42,6 @@ export default function DocumentUploadZone({
   };
 
   const handleFiles = (files: FileList) => {
-    console.log("Files uploaded:", Array.from(files).map((f) => f.name));
     setUploadedFile(files[0]?.name || null);
     onUpload?.(files);
   };
