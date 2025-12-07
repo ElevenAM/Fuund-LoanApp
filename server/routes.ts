@@ -49,10 +49,67 @@ function formatPropertyType(type: string | null): string {
   return types[type] || type;
 }
 
+function getMimeType(fileName: string): string {
+  const ext = fileName.toLowerCase().split('.').pop() || '';
+  const mimeTypes: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
 async function sendApplicationEmail(application: LoanApplication): Promise<void> {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn("SendGrid API key not configured, skipping email notification");
     return;
+  }
+
+  const attachments: Array<{ content: string; filename: string; type: string; disposition: string }> = [];
+  
+  try {
+    const documents = await storage.getApplicationDocuments(application.id);
+    
+    if (documents.length > 0) {
+      const objectStorage = getObjectStorage();
+      
+      for (const doc of documents) {
+        if (doc.storagePath && doc.status === "uploaded") {
+          try {
+            const downloadResult = await objectStorage.downloadAsBytes(doc.storagePath);
+            if (downloadResult.ok) {
+              const rawValue = downloadResult.value;
+              const fileBuffer = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+              if (!fileBuffer || fileBuffer.length === 0) {
+                console.warn(`Empty file content for document ${doc.id}`);
+                continue;
+              }
+              const base64Content = Buffer.from(fileBuffer).toString('base64');
+              const fileName = doc.name || doc.storagePath.split('/').pop() || 'document';
+              attachments.push({
+                content: base64Content,
+                filename: fileName,
+                type: getMimeType(fileName),
+                disposition: 'attachment',
+              });
+              console.log(`Attached document: ${fileName}`);
+            } else {
+              console.warn(`Failed to download document ${doc.id}: ${downloadResult.error}`);
+            }
+          } catch (downloadError) {
+            console.warn(`Error downloading document ${doc.id}:`, downloadError);
+          }
+        }
+      }
+    }
+  } catch (docError) {
+    console.warn("Error fetching application documents:", docError);
   }
 
   const loanSpecifics = application.loanSpecifics as Record<string, any> || {};
@@ -201,6 +258,15 @@ async function sendApplicationEmail(application: LoanApplication): Promise<void>
       </div>
       ` : ""}
 
+      ${attachments.length > 0 ? `
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #2d3748; margin-top: 0;">Attached Documents (${attachments.length})</h2>
+        <ul style="margin: 0; padding-left: 20px; color: #4a5568;">
+          ${attachments.map(att => `<li style="padding: 4px 0;">${att.filename}</li>`).join('')}
+        </ul>
+      </div>
+      ` : ""}
+
       <div style="margin-top: 30px; padding: 15px; background: #ebf8ff; border-radius: 8px; text-align: center;">
         <p style="margin: 0; color: #2b6cb0;">
           <strong>Submitted:</strong> ${new Date().toLocaleString("en-US", { 
@@ -212,16 +278,17 @@ async function sendApplicationEmail(application: LoanApplication): Promise<void>
     </div>
   `;
 
-  const msg = {
+  const msg: sgMail.MailDataRequired = {
     to: NOTIFICATION_EMAIL,
     from: SENDER_EMAIL,
     subject: `New Loan Application: ${formatCurrency(application.loanAmount)} - ${application.propertyCity || "Unknown City"}, ${application.propertyState || ""}`,
     html: emailHtml,
+    attachments: attachments.length > 0 ? attachments : undefined,
   };
 
   try {
     await sgMail.send(msg);
-    console.log(`Application email sent successfully to ${NOTIFICATION_EMAIL}`);
+    console.log(`Application email sent successfully to ${NOTIFICATION_EMAIL} with ${attachments.length} attachment(s)`);
   } catch (error: any) {
     console.error("SendGrid email error:", error?.response?.body || error.message);
   }
