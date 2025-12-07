@@ -37,6 +37,7 @@
   --destructive: 0 0% 0%;
   --destructive-foreground: 0 0% 100%;
   --input: 0 0% 70.98%;
+  --placeholder: 0 0% 55%;
   --ring: 0 0% 41.96%;
   --chart-1: 203.8863 88.2845% 53.1373%;
   --chart-2: 159.7826 100% 36.0784%;
@@ -121,6 +122,7 @@
   --destructive: 356.3033 90.5579% 54.3137%;
   --destructive-foreground: 0 0% 100%;
   --input: 20 14% 18%;
+  --placeholder: 20 10% 40%;
   --ring: 9 75% 61%;
   --chart-1: 203.8863 88.2845% 53.1373%;
   --chart-2: 159.7826 100% 36.0784%;
@@ -205,7 +207,7 @@
   /* Placeholder styling for contentEditable div */
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--placeholder));
     pointer-events: none;
   }
 
