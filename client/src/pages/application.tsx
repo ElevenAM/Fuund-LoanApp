@@ -7,6 +7,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import ProgressStepper from "@/components/ProgressStepper";
 import SaveIndicator from "@/components/SaveIndicator";
 import QuickStartForm from "@/components/QuickStartForm";
@@ -27,6 +28,13 @@ export default function Application() {
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [applicationData, setApplicationData] = useState<any>({});
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  
+  const { 
+    getStepValidation, 
+    markStepVisited,
+    hasVisitedStep,
+  } = useFormValidation(applicationData);
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -207,14 +215,25 @@ export default function Application() {
     return "upcoming";
   };
 
+  const getStepValidationInfo = (stepId: number) => {
+    if (stepId > 5) return { hasMissingFields: false, missingFieldCount: 0 };
+    const validation = getStepValidation(stepId);
+    const status = getStepStatus(stepId);
+    const shouldShowValidation = (status === "completed" || (status === "current" && showValidation));
+    return {
+      hasMissingFields: shouldShowValidation && validation.missingFields.length > 0,
+      missingFieldCount: validation.missingFields.length,
+    };
+  };
+
   const steps = [
-    { id: 1, name: "Quick Start", status: getStepStatus(1) },
-    { id: 2, name: "Property Details", status: getStepStatus(2) },
-    { id: 3, name: "Loan Specifics", status: getStepStatus(3) },
-    { id: 4, name: "Financial Snapshot", status: getStepStatus(4) },
-    { id: 5, name: "Property Performance", status: getStepStatus(5) },
-    { id: 6, name: "Documents", status: getStepStatus(6) },
-    { id: 7, name: "Review & Submit", status: getStepStatus(7) },
+    { id: 1, name: "Quick Start", status: getStepStatus(1), ...getStepValidationInfo(1) },
+    { id: 2, name: "Property Details", status: getStepStatus(2), ...getStepValidationInfo(2) },
+    { id: 3, name: "Loan Specifics", status: getStepStatus(3), ...getStepValidationInfo(3) },
+    { id: 4, name: "Financial Snapshot", status: getStepStatus(4), ...getStepValidationInfo(4) },
+    { id: 5, name: "Property Performance", status: getStepStatus(5), ...getStepValidationInfo(5) },
+    { id: 6, name: "Documents", status: getStepStatus(6), hasMissingFields: false, missingFieldCount: 0 },
+    { id: 7, name: "Review & Submit", status: getStepStatus(7), hasMissingFields: false, missingFieldCount: 0 },
   ];
 
   // Helper function to clean empty strings from payload
@@ -289,6 +308,8 @@ export default function Application() {
       setSaveStatus("saved");
       setCurrentStep(nextStep);
       setMaxStepReached((prev) => Math.max(prev, nextStep));
+      setShowValidation(true);
+      markStepVisited(currentStep);
     } catch (error: any) {
       console.error("Error saving application:", error);
       setSaveStatus("idle");
@@ -314,6 +335,8 @@ export default function Application() {
   }, [applicationData, autoSave]);
 
   const handleBack = () => {
+    markStepVisited(currentStep);
+    setShowValidation(true);
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 

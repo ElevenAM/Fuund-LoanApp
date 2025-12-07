@@ -1,9 +1,12 @@
-import { Check } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Step {
   id: number;
   name: string;
   status: "completed" | "current" | "upcoming";
+  hasMissingFields?: boolean;
+  missingFieldCount?: number;
 }
 
 interface ProgressStepperProps {
@@ -13,8 +16,6 @@ interface ProgressStepperProps {
 
 export default function ProgressStepper({ steps, onStepClick }: ProgressStepperProps) {
   const handleStepClick = (step: Step) => {
-    // Only allow navigation to completed steps
-    // Don't navigate if already on current step
     if (step.status === "completed" && onStepClick) {
       console.log(`Navigating to step ${step.id}: ${step.name}`);
       onStepClick(step.id);
@@ -32,21 +33,56 @@ export default function ProgressStepper({ steps, onStepClick }: ProgressStepperP
                 className="flex items-start group w-full text-left hover:opacity-80 transition-opacity cursor-pointer"
                 data-testid={`step-completed-${step.id}`}
               >
-                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary flex-shrink-0">
-                  <Check className="w-5 h-5 text-primary-foreground" data-testid={`icon-check-${step.id}`} />
+                <span className={`flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 ${
+                  step.hasMissingFields ? "bg-amber-500" : "bg-primary"
+                }`}>
+                  {step.hasMissingFields ? (
+                    <AlertCircle className="w-5 h-5 text-white" data-testid={`icon-warning-${step.id}`} />
+                  ) : (
+                    <Check className="w-5 h-5 text-primary-foreground" data-testid={`icon-check-${step.id}`} />
+                  )}
                 </span>
-                <span className="ml-3 text-sm font-medium text-foreground group-hover:underline" data-testid={`text-step-name-${step.id}`}>
-                  {step.name}
-                </span>
+                <div className="ml-3 flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground group-hover:underline" data-testid={`text-step-name-${step.id}`}>
+                    {step.name}
+                  </span>
+                  {step.hasMissingFields && step.missingFieldCount && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span 
+                          className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full"
+                          data-testid={`badge-missing-${step.id}`}
+                        >
+                          {step.missingFieldCount} missing
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{step.missingFieldCount} required field{step.missingFieldCount > 1 ? 's' : ''} need{step.missingFieldCount === 1 ? 's' : ''} to be completed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               </button>
             ) : step.status === "current" ? (
               <div className="flex items-start" data-testid={`step-current-${step.id}`}>
-                <span className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-primary bg-background flex-shrink-0">
-                  <span className="w-3 h-3 rounded-full bg-primary" data-testid={`indicator-current-${step.id}`} />
+                <span className={`flex items-center justify-center w-8 h-8 rounded-full border-2 bg-background flex-shrink-0 ${
+                  step.hasMissingFields ? "border-amber-500" : "border-primary"
+                }`}>
+                  <span className={`w-3 h-3 rounded-full ${step.hasMissingFields ? "bg-amber-500" : "bg-primary"}`} data-testid={`indicator-current-${step.id}`} />
                 </span>
-                <span className="ml-3 text-sm font-semibold text-primary" data-testid={`text-step-name-${step.id}`}>
-                  {step.name}
-                </span>
+                <div className="ml-3 flex items-center gap-2">
+                  <span className={`text-sm font-semibold ${step.hasMissingFields ? "text-amber-600 dark:text-amber-400" : "text-primary"}`} data-testid={`text-step-name-${step.id}`}>
+                    {step.name}
+                  </span>
+                  {step.hasMissingFields && step.missingFieldCount && (
+                    <span 
+                      className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full"
+                      data-testid={`badge-missing-${step.id}`}
+                    >
+                      {step.missingFieldCount} missing
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-start group opacity-50 cursor-not-allowed" data-testid={`step-upcoming-${step.id}`}>
