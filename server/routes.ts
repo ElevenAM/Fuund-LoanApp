@@ -556,10 +556,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const file = req.file;
-        const { name, type } = req.body;
+        const { type } = req.body;
+        // Use name from body, or fall back to file's original name
+        const name = req.body.name || (file ? file.originalname : null);
 
-        if (!name || !type) {
-          return res.status(400).json({ message: "Document name and type are required" });
+        if (!type) {
+          return res.status(400).json({ message: "Document type is required" });
+        }
+        if (!name) {
+          return res.status(400).json({ message: "Document name is required (provide name field or upload a file)" });
         }
 
         let storagePath = null;

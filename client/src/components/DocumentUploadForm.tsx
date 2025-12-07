@@ -33,6 +33,12 @@ interface UploadedDocument {
   status: "uploading" | "uploaded" | "failed";
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function DocumentUploadForm({ 
   onContinue, 
   onBack, 
@@ -114,6 +120,7 @@ export default function DocumentUploadForm({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", type);
+      formData.append("name", file.name); // Add document name (required by API)
 
       const response = await fetch(`/api/applications/${applicationId}/documents`, {
         method: "POST",
@@ -243,12 +250,6 @@ export default function DocumentUploadForm({
     }
 
     onContinue?.();
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const requiredDocsUploaded = documentRequirements
