@@ -8,6 +8,7 @@ import { insertLoanApplicationSchema, insertDocumentSchema, type LoanApplication
 import sgMail from "@sendgrid/mail";
 
 const NOTIFICATION_EMAIL = "liamnguyen.mail@gmail.com";
+const SENDER_EMAIL = "liam@flejling.com";
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -213,7 +214,7 @@ async function sendApplicationEmail(application: LoanApplication): Promise<void>
 
   const msg = {
     to: NOTIFICATION_EMAIL,
-    from: NOTIFICATION_EMAIL,
+    from: SENDER_EMAIL,
     subject: `New Loan Application: ${formatCurrency(application.loanAmount)} - ${application.propertyCity || "Unknown City"}, ${application.propertyState || ""}`,
     html: emailHtml,
   };
