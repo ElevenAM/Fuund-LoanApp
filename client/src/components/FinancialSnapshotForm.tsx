@@ -58,17 +58,18 @@ export default function FinancialSnapshotForm({ onContinue, onBack, initialData,
       return response.json();
     },
     onSuccess: (data, variables) => {
+      const fileName = data.fileName || data.name || variables.file.name;
       setUploadedFiles(prev => ({
         ...prev,
         [variables.type]: {
           type: variables.type,
-          fileName: data.fileName,
+          fileName: fileName,
           status: "uploaded" as const
         }
       }));
       toast({
         title: "Document uploaded",
-        description: `${data.fileName} has been uploaded successfully.`,
+        description: `${fileName} has been uploaded successfully.`,
       });
       if (applicationId) {
         queryClient.invalidateQueries({ queryKey: ['/api/applications', applicationId, 'documents'] });
