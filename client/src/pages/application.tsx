@@ -440,7 +440,7 @@ export default function Application() {
       case 3:
         return <LoanSpecificsForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 4:
-        return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
+        return <FinancialSnapshotForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} applicationId={applicationId} />;
       case 5:
         return <PropertyPerformanceForm onContinue={handleContinue} onBack={handleBack} initialData={applicationData} showValidation={showValidation} />;
       case 6:

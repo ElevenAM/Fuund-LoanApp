@@ -4,9 +4,18 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Circle, Clock, FileText, Upload, Plus } from "lucide-react";
+import { CheckCircle2, Circle, Clock, FileText, Upload, Plus, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import DocumentCard from "./DocumentCard";
+import { useQuery } from "@tanstack/react-query";
+
+interface Document {
+  id: string;
+  type: string;
+  fileName: string;
+  fileSize: number;
+  uploadedAt: string;
+}
 
 interface Application {
   id: string;
@@ -34,6 +43,34 @@ export default function ApplicationDashboard({ applications }: ApplicationDashbo
   );
   
   const selectedApplication = applications.find((app) => app.id === selectedApplicationId);
+
+  const { data: documents, isLoading: documentsLoading } = useQuery<Document[]>({
+    queryKey: ['/api/applications', selectedApplicationId, 'documents'],
+    enabled: !!selectedApplicationId,
+  });
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getDocumentTypeLabel = (type: string) => {
+    const typeLabels: Record<string, string> = {
+      "bank-statements": "Bank Statements",
+      "tax-return": "Tax Return",
+      "personal-financial-statement": "Personal Financial Statement",
+      "financial-statements": "Financial Statements",
+      "tax-returns": "Tax Returns",
+      "rent-roll": "Rent Roll",
+      "property-photos": "Property Photos",
+      "purchase-agreement": "Purchase Agreement",
+      "appraisal": "Property Appraisal",
+      "environmental": "Environmental Report",
+      "insurance": "Insurance Documentation",
+    };
+    return typeLabels[type] || type.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  };
 
   const statusSteps = [
     { id: "draft", label: "Draft", status: "completed" },
@@ -314,6 +351,61 @@ export default function ApplicationDashboard({ applications }: ApplicationDashbo
           </div>
         </Card>
       </div>
+
+      <Card className="p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Upload className="w-5 h-5" />
+          Uploaded Documents
+        </h3>
+        {documentsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : documents && documents.length > 0 ? (
+          <div className="space-y-3">
+            {documents.map((doc) => (
+              <div 
+                key={doc.id} 
+                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                data-testid={`document-row-${doc.id}`}
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium" data-testid={`text-document-name-${doc.id}`}>
+                      {doc.fileName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {getDocumentTypeLabel(doc.type)} • {formatFileSize(doc.fileSize)}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Uploaded
+                </Badge>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <FileText className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              No documents uploaded yet
+            </p>
+            {selectedApplication?.status === "draft" && (
+              <Button
+                variant="link"
+                className="h-auto p-0 text-sm mt-2"
+                onClick={() => setLocation("/apply")}
+                data-testid="button-upload-documents"
+              >
+                Upload documents in your application
+              </Button>
+            )}
+          </div>
+        )}
+      </Card>
 
       <Card className="p-8 mt-6">
         <h3 className="text-lg font-semibold mb-4">Lender-Ordered Reports</h3>

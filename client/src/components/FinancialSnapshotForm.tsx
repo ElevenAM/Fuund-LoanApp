@@ -7,14 +7,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft } from "lucide-react";
 import DocumentUploadZone from "./DocumentUploadZone";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface FinancialSnapshotFormProps {
   onContinue?: (data: any) => void;
   onBack?: () => void;
   initialData?: any;
+  applicationId?: string | null;
 }
 
-export default function FinancialSnapshotForm({ onContinue, onBack, initialData }: FinancialSnapshotFormProps) {
+interface UploadedFile {
+  type: string;
+  fileName: string;
+  status: "uploading" | "uploaded" | "failed";
+}
+
+export default function FinancialSnapshotForm({ onContinue, onBack, initialData, applicationId }: FinancialSnapshotFormProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     netWorth: initialData?.netWorth || "",
     liquidAssets: initialData?.liquidAssets || "",
@@ -23,6 +34,96 @@ export default function FinancialSnapshotForm({ onContinue, onBack, initialData 
     hasBankruptcy: initialData?.hasBankruptcy || false,
     authorizeCreditPull: initialData?.authorizeCreditPull || false,
   });
+  
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile>>({});
+
+  const uploadDocumentMutation = useMutation({
+    mutationFn: async ({ file, type }: { file: File; type: string }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+      formData.append("name", file.name);
+
+      const response = await fetch(`/api/applications/${applicationId}/documents`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Upload failed");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      setUploadedFiles(prev => ({
+        ...prev,
+        [variables.type]: {
+          type: variables.type,
+          fileName: data.fileName,
+          status: "uploaded" as const
+        }
+      }));
+      toast({
+        title: "Document uploaded",
+        description: `${data.fileName} has been uploaded successfully.`,
+      });
+      if (applicationId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/applications', applicationId, 'documents'] });
+      }
+    },
+    onError: (error: any, variables) => {
+      setUploadedFiles(prev => ({
+        ...prev,
+        [variables.type]: {
+          ...prev[variables.type],
+          status: "failed" as const
+        }
+      }));
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleFileUpload = async (type: string, files: FileList) => {
+    if (!files || files.length === 0) return;
+    
+    if (!applicationId) {
+      toast({
+        title: "Application not saved",
+        description: "Please complete the previous steps first before uploading documents.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const file = files[0];
+    
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadedFiles(prev => ({
+      ...prev,
+      [type]: {
+        type,
+        fileName: file.name,
+        status: "uploading"
+      }
+    }));
+
+    await uploadDocumentMutation.mutateAsync({ file, type });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,14 +273,17 @@ export default function FinancialSnapshotForm({ onContinue, onBack, initialData 
             <DocumentUploadZone
               label="Bank Statements (Last 2 months)"
               description="For acquisitions - can upload later"
+              onUpload={(files) => handleFileUpload("bank-statements", files)}
             />
             <DocumentUploadZone
               label="Most Recent Tax Return"
               description="Optional at this stage"
+              onUpload={(files) => handleFileUpload("tax-return", files)}
             />
             <DocumentUploadZone
               label="Personal Financial Statement"
               description="Or complete a quick form later"
+              onUpload={(files) => handleFileUpload("personal-financial-statement", files)}
             />
           </div>
         </Card>
