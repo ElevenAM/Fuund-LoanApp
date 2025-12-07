@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -77,18 +77,19 @@ export default function DocumentUploadZone({
           {uploadedFile ? (
             <div className="flex flex-col items-center gap-3">
               <FileText className="w-12 h-12 text-primary" />
-              <div>
+              <div className="flex items-center gap-2">
                 <p className="text-sm font-medium" data-testid="text-uploaded-file">
                   {uploadedFile}
                 </p>
                 <Button
+                  type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setUploadedFile(null)}
-                  className="h-auto p-0 text-xs"
-                  data-testid="button-replace-file"
+                  className="h-6 w-6"
+                  data-testid="button-delete-file"
                 >
-                  Replace file
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -99,6 +100,7 @@ export default function DocumentUploadZone({
                 Drag and drop your file here, or
               </p>
               <Button
+                type="button"
                 variant="ghost"
                 className="h-auto p-0 text-sm"
                 onClick={() => document.getElementById(`file-input-${label}`)?.click()}
